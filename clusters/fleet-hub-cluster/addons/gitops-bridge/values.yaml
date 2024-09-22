@@ -1,17 +1,27 @@
 # values for the addon
 addons:
-  external_secrets:
-    values:
-      serviceAccount:
-        annotations:
-          eks.amazonaws.com/role-arn: '' # override with empty string because we are using pod identity not IRSA
-  karpenter:
-    values:
-      serviceAccount:
-        annotations:
-          eks.amazonaws.com/role-arn: '' # override with empty string because we are using pod identity not IRSA
   aws_load_balancer_controller:
-    values:
-      serviceAccount:
-        annotations:
-          eks.amazonaws.com/role-arn: '' # override with empty string because we are using pod identity not IRSA
+    enabled: true
+  # aws_ebs_csi_resources:
+  #   enabled: true
+  # metrics_server:
+  #   enabled: true
+  # karpenter:
+  #   enabled: true
+  # kyverno:
+  #   enabled: true
+  # external_secrets:
+  #   enabled: true
+  # cni_metrics_helper:
+  #   enabled: true
+  # cw_prometheus:
+  #   enabled: true
+  # grafana_operator:
+  #   enabled: true
+  # argocd:
+  #   enabled: true # ArgoCD is enabled to replace the argocd installed at bootstrap time via terraform helm provider
+  # prometheus_node_exporter:
+  #   enabled: true
+  # kube_state_metrics:
+  #   enabled: true
+
