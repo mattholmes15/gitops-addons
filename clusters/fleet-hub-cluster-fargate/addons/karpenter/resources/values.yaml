@@ -1,1 +1,6 @@
-# Karpenter Resource Values
+ApiVersion: v1
+nodeGroups:
+  platform:
+    amiFamily: Bottlerocket
+    amiSelectorTerms:
+      - alias: bottlerocket@latest
