@@ -1,0 +1,287 @@
+global:
+## Override the deployment namespace
+#   namespaceOverride:
+
+image:
+  repository: public.ecr.aws/aws-observability/aws-for-fluent-bit
+  tag: 2.32.2.20240516
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+podSecurityContext: {}
+# runAsUser: 1000
+# runAsGroup: 1000
+# runAsNonRoot: true
+# seccompProfile:
+#   type: RuntimeDefault
+containerSecurityContext: {}
+# allowPrivilegeEscalation: false
+# capabilities: 
+#   drop:
+#   - ALL
+
+rbac:
+  # rbac.pspEnabled, if `true` a restricted pod security policy is created and used
+  pspEnabled: false
+
+service:
+  ## Allow the service to be exposed for monitoring
+  ## For liveness check to work, Health_Check must be set to On
+  ## https://docs.fluentbit.io/manual/administration/monitoring
+  extraService: |
+    Flush                     5
+    Grace                     30
+    Log_Level                 error
+    Daemon                    off
+    Parsers_File              parsers.conf
+    HTTP_Server               On
+    HTTP_Listen               0.0.0.0
+    HTTP_Port                 2020
+    storage.path              /var/fluent-bit/state/flb-storage/
+    storage.sync              normal
+    storage.checksum          off
+    storage.backlog.mem_limit 5M
+    Health_Check On 
+    HC_Errors_Count 5 
+    HC_Retry_Failure_Count 5 
+    HC_Period 5 
+
+  parsersFiles:
+    - /fluent-bit/parsers/parsers.conf
+  extraParsers: |
+    [PARSER]
+        Name                syslog
+        Format              regex
+        Regex               ^(?<time>[^ ]* {1,2}[^ ]* [^ ]*) (?<host>[^ ]*) (?<ident>[a-zA-Z0-9_\/\.\-]*)(?:\[(?<pid>[0-9]+)\])?(?:[^\:]*\:)? *(?<message>.*)$
+        Time_Key            time
+        Time_Format         %b %d %H:%M:%S
+
+    [PARSER]
+        Name                container_firstline
+        Format              regex
+        Regex               (?<log>(?<="log":")\S(?!\.).*?)(?<!\\)".*(?<stream>(?<="stream":").*?)".*(?<time>\d{4}-\d{1,2}-\d{1,2}T\d{2}:\d{2}:\d{2}\.\w*).*(?=})
+        Time_Key            time
+        Time_Format         %Y-%m-%dT%H:%M:%S.%LZ
+
+input:
+  enabled: true
+  tag: "dataplane.tail.*"
+  path: /var/log/containers/aws-node*, /var/log/containers/kube-proxy*, /var/log/containers/aws-for-fluent-bit-*
+  db: "/var/fluent-bit/state/flb_dataplane_tail.db"
+  multilineParser: "docker, cri"
+  memBufLimit: 50MB
+  skipLongLines: "On"
+  refreshInterval: 10
+  extraInputs: |
+    Rotate_Wait         30
+    storage.type        filesystem
+    Read_from_Head      Off
+  #   ...
+
+additionalInputs: |
+    [INPUT]
+        Name                systemd
+        Tag                 dataplane.systemd.*
+        Systemd_Filter      _SYSTEMD_UNIT=docker.service
+        Systemd_Filter      _SYSTEMD_UNIT=containerd.service
+        Systemd_Filter      _SYSTEMD_UNIT=kubelet.service
+        DB                  /var/fluent-bit/state/systemd.db
+        Path                /var/log/journal
+        Read_From_Tail      On
+
+    [INPUT]
+        Name                tail
+        Tag                 host.dmesg
+        Path                /var/log/dmesg
+        Key                 message
+        DB                  /var/fluent-bit/state/flb_dmesg.db
+        Mem_Buf_Limit       5MB
+        Skip_Long_Lines     On
+        Refresh_Interval    10
+        Read_from_Head      On
+
+    [INPUT]
+        Name                tail
+        Tag                 host.messages
+        Path                /var/log/messages
+        Parser              syslog
+        DB                  /var/fluent-bit/state/flb_messages.db
+        Mem_Buf_Limit       5MB
+        Skip_Long_Lines     On
+        Refresh_Interval    10
+        Read_from_Head      On
+
+    [INPUT]
+        Name                tail
+        Tag                 host.secure
+        Path                /var/log/secure
+        Parser              syslog
+        DB                  /var/fluent-bit/state/flb_secure.db
+        Mem_Buf_Limit       5MB
+        Skip_Long_Lines     On
+        Refresh_Interval    10
+        Read_from_Head      On
+
+    [INPUT]
+        Name                systemd
+        Tag                 dataplane.systemd.*
+        Systemd_Filter      _SYSTEMD_UNIT=docker.service
+        Systemd_Filter      _SYSTEMD_UNIT=containerd.service
+        Systemd_Filter      _SYSTEMD_UNIT=kubelet.service
+        DB                  /var/fluent-bit/state/systemd.db
+        Path                /var/log/journal
+        Read_From_Tail      On
+
+filter:
+  enabled: true
+  match: "host.*"
+  name: aws
+# Uncomment the extraFilters to use Kubelet to get the Metadata instead of talking to API server for large clusters
+# Check this link for more details https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/ContainerInsights-use-kubelet.html
+#  extraFilters: |
+#    Kube_Tag_Prefix     application.var.log.containers.
+#    Labels              Off
+#    Annotations         Off
+#    Use_Kubelet         true
+#    Kubelet_Port        10250
+#    Kube_CA_File        /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+#    Kube_Token_File     /var/run/secrets/kubernetes.io/serviceaccount/token
+
+additionalFilters: |
+  [FILTER]
+      Name                modify
+      Match               dataplane.systemd.*
+      Rename              _HOSTNAME                   hostname
+      Rename              _SYSTEMD_UNIT               systemd_unit
+      Rename              MESSAGE                     message
+      Remove_regex        ^((?!hostname|systemd_unit|message).)*$
+
+  [FILTER]
+      Name                aws
+      Match               dataplane.*
+      imds_version        v2
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name:
+
+resources:
+  limits:
+    memory: 250Mi
+  requests:
+    cpu: 50m
+    memory: 50Mi
+
+## Assign a PriorityClassName to pods if set
+# priorityClassName: system-node-critical
+
+updateStrategy:
+  type: RollingUpdate
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+annotations:
+  {}
+  # iam.amazonaws.com/role: arn:aws:iam::123456789012:role/role-for-fluent-bit
+
+# Specifies if aws-for-fluent-bit should be started in hostNetwork mode.
+#
+# This is required if using a custom CNI where the managed control plane nodes are unable to initiate
+# network connections to the pods, for example using Calico CNI plugin on EKS. This is not required or
+# recommended if using the Amazon VPC CNI plugin.
+
+# Set hostNetwork to true and dnsPolicy to ClusterFirstWithHostNet to use Kubelet to get the Metadata for large clusters
+# Check this link for more details https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/ContainerInsights-use-kubelet.html
+hostNetwork: false
+dnsPolicy: ClusterFirst
+
+env: []
+## To add extra environment variables to the pods, add as below
+# env:
+#   - name: AWS_REGION
+#     valueFrom:
+#       configMapKeyRef:
+#         name: fluent-bit-cluster-info
+#         key: logs.region
+#   - name: CLUSTER_NAME
+#     valueFrom:
+#       configMapKeyRef:
+#         name: fluent-bit-cluster-info
+#         key: cluster.name
+#   - name: HOST_NAME
+#     valueFrom:
+#       fieldRef:
+#         fieldPath: spec.nodeName
+
+volumes:
+  - name: varlog
+    hostPath:
+      path: /var/log
+  - name: varlibdockercontainers
+    hostPath:
+      path: /var/lib/docker/containers
+
+volumeMounts:
+  - name: varlog
+    mountPath: /var/log
+  - name: varlibdockercontainers
+    mountPath: /var/lib/docker/containers
+    readOnly: true
+
+# For livenessProbe to work - service.extraService must also enable Health_Check On
+livenessProbe:
+  httpGet:
+    path: /api/v1/health
+    port: 2020
+    scheme: HTTP
+  failureThreshold: 2
+  initialDelaySeconds: 30
+  timeoutSeconds: 10
+
+readinessProbe: {}
+  # httpGet:
+  #   path: /api/v1/health
+  #   port: 2020
+  #   scheme: HTTP
+  # failureThreshold: 2
+  # initialDelaySeconds: 30
+  # timeoutSeconds: 10
+
+serviceMonitor:
+  service: 
+    type: ClusterIP
+    port: 2020
+    targetPort: 2020
+    extraPorts: []
+      # - port: 2021
+      #   targetPort: 2021
+      #   protocol: TCP
+      #   name: metrics
+  ## When set true then use a ServiceMonitor to configure scraping
+  enabled: false
+  interval: 30s
+  telemetryPath: /api/v1/metrics/prometheus
+  labels:
+    # app: example-application
+    # teamname: example
+  timeout: 10s
+  relabelings: []
+  targetLabels: []
+  metricRelabelings: []
+  extraEndpoints: []
+    # - port: metrics
+    #   path: /metrics
+    #   interval: 30s
+    #   scrapeTimeout: 10s
+    #   scheme: http
+tolerations:
+  - key: CriticalAddonsOnly
+    operator: "Exists"

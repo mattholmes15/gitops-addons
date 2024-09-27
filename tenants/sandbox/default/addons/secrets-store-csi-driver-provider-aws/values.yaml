@@ -1,0 +1,13 @@
+# Helm chart values
+tolerations:
+  - key: CriticalAddonsOnly
+    effect: "NoSchedule"
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: "type"
+          operator: "In"
+          values:
+          - "criticalAddons"
