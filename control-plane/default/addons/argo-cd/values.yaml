@@ -1,3 +1,7 @@
+global:
+  tolerations:
+    - key: CriticalAddonsOnly
+      operator: "Exists"
 server:
   service:
     type: LoadBalancer

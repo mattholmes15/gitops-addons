@@ -2,3 +2,8 @@ global:
   tolerations:
     - key: CriticalAddonsOnly
       operator: "Exists"
+server:
+  service:
+    type: LoadBalancer
+    annotations:
+      service.beta.kubernetes.io/aws-load-balancer-internal: true
