@@ -2,6 +2,13 @@ global:
   tolerations:
     - key: CriticalAddonsOnly
       operator: "Exists"
+controller:
+  replicas: 1 # Additional replicas will cause sharding of managed clusters across number of replicas.
+  metrics:
+    enabled: true
+    service:
+      annotations:
+        prometheus.io/scrape: true
 server:
   service:
     type: LoadBalancer
