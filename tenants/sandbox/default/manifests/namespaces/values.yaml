@@ -1,8 +1,0 @@
-global:
-  namespaces:
-  - topology
-  - uofsta-dev-dp-cdp
-  - uofsta-dev-per-prd
-  - uofsta-dev-sta-imm
-  - uofsta-dev-sta-rte
-  - uofsta-dev-sta-rts

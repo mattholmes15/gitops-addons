@@ -1,4 +1,5 @@
 tenant: "tenant1"
 clusterName: "workload1"
 addons_repo_basepath: "tenants/"
+manifests_repo_basepath: "tenants/"
 secretManagerSecretName: "hub-cluster-fargater/spoke-workload1"
