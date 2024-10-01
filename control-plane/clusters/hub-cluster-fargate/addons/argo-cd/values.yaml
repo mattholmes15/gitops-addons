@@ -42,8 +42,10 @@ applicationSet:
         prometheus.io/scrape: true
 
 server:
-  service:
-    type: LoadBalancer
+service:
+  type: LoadBalancer
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internal"
   autoscaling:
     enabled: true
     minReplicas: 1
