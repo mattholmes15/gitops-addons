@@ -1,5 +1,8 @@
-values:
-  region: '{{.metadata.annotations.aws_region}}'
-  tolerations:
-  - key: "CriticalAddonsOnly"
-    operator: "Exists"
+region: eu-west-2 #'{{.metadata.annotations.aws_region}}'
+tolerations:
+- key: "CriticalAddonsOnly"
+  operator: "Exists"
+serviceAccount:
+  create: true
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::467446774173:role/aws-lb-controller-irsa
