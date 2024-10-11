@@ -54,7 +54,7 @@ spec:
               - $values/{{.metadata.annotations.addons_repo_basepath}}{{.metadata.labels.tenant}}/default/addons/{{.values.addonChart}}/values.yaml
               - $values/{{.metadata.annotations.addons_repo_basepath}}{{.metadata.labels.tenant}}/clusters/{{.name}}/addons/{{.values.addonChart}}/values.yaml
             values: |
-              containerPort: 10250
+              containerPort: 10251
       destination:
         namespace: '{{.values.addonChartNamespace}}'
         name: '{{.name}}'
