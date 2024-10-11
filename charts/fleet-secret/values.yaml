@@ -2,7 +2,8 @@ secretStore:
   enabled: false
   kind: "SecretStore"
   name: "aws-secrets-manager"
-  region: ""
+  region: "eu-west-2"
+  serviceAccount: argocd-server #TODO is this correct?
 
 externalSecret:
   enabled: false
