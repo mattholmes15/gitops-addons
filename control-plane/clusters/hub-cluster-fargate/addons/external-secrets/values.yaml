@@ -11,7 +11,8 @@ webhook:
   tolerations:
     - key: CriticalAddonsOnly
       operator: "Exists"
-  serviceAccount:
-    create: true
-    annotations:
-      eks.amazonaws.com/role-arn: arn:aws:iam::215863704262:role/external-secrets-irsa
+serviceAccount:
+  create: true
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::215863704262:role/external-secrets-irsa
+
