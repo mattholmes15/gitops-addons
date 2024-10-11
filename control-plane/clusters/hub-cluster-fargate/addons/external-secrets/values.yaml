@@ -6,8 +6,16 @@ certController:
   tolerations:
     - key: CriticalAddonsOnly
       operator: "Exists"
+  serviceAccount:
+    create: true
+    annotations:
+      eks.amazonaws.com/role-arn: arn:aws:iam::215863704262:role/external-secrets-irsa
 webhook:
   port: 9443 # To work with fargate
   tolerations:
     - key: CriticalAddonsOnly
       operator: "Exists"
+  serviceAccount:
+    create: true
+    annotations:
+      eks.amazonaws.com/role-arn: arn:aws:iam::215863704262:role/external-secrets-irsa
