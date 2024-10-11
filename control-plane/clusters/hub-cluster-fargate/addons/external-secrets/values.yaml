@@ -1,8 +1,4 @@
 # Helm chart values
-serviceAccount:
-  create: true
-  annotations:
-    eks.amazonaws.com/role-arn: arn:aws:iam::215863704262:role/external-secrets-irsa
 tolerations:
   - key: CriticalAddonsOnly
     operator: "Exists"
