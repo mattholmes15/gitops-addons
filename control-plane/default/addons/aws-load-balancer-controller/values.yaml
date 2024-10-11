@@ -1,5 +1,3 @@
-# values for the addon
-region: '{{.metadata.annotations.aws_region}}'
 tolerations:
 - key: "CriticalAddonsOnly"
   operator: "Exists"

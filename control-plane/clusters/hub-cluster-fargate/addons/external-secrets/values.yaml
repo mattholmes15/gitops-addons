@@ -7,6 +7,7 @@ certController:
     - key: CriticalAddonsOnly
       operator: "Exists"
 webhook:
+  port: 9443 # To work with fargate
   tolerations:
     - key: CriticalAddonsOnly
       operator: "Exists"
