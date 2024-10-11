@@ -14,4 +14,4 @@ webhook:
   serviceAccount:
     create: true
     annotations:
-      eks.amazonaws.com/role-arn: arn:aws:iam::215863704262:role/aws-lb-controller-irsa
+      eks.amazonaws.com/role-arn: arn:aws:iam::215863704262:role/external-secrets-irsa
