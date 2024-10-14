@@ -43,10 +43,10 @@ applicationSet:
 
 server:
   service:
-    type: LoadBalancer
+    type: LoadBalancer #TODO below creation of LB correct?
     annotations:
-      service.beta.kubernetes.io/aws-load-balancer-scheme: internal
-      service.beta.kubernetes.io/aws-load-balancer-type: external
+      service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+      service.beta.kubernetes.io/aws-load-balancer-type: nlb
       service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
   autoscaling:
     enabled: true
